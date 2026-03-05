@@ -129,7 +129,7 @@ export const workspaceLoader: LoaderFunction = async ({
   const searchParams = new URL(request.url).searchParams;
   const filter = searchParams.get('filter');
   const sortOrder = searchParams.get('sortOrder') as SortOrder;
-  const sortFunction = sortMethodMap[sortOrder] || sortMethodMap['type-manual'];
+  const sortFunction = sortMethodMap[sortOrder] || sortMethodMap['name-asc'];
 
   // first recursion to get all the folders ids in order to use nedb search by an array
   const flattenFoldersIntoList = async (id: string): Promise<string[]> => {

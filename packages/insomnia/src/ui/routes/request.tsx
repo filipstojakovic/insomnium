@@ -102,17 +102,23 @@ export const createRequestAction: ActionFunction = async ({ request, params }) =
 
   let activeRequestId;
   if (requestType === 'HTTP') {
+    const method = req?.method || METHOD_GET;
+    const isBodyAllowed = ['POST', 'PUT', 'PATCH'].includes(method);
     activeRequestId = (await models.request.create({
       parentId: parentId || workspaceId,
-      method: METHOD_GET,
-      name: 'New Request',
-      headers: [{ name: 'User-Agent', value: `insomnium/${version}` }],
+      method,
+      name: req?.name || 'New Request',
+      headers: [
+        { name: 'User-Agent', value: `insomnium/${version}` },
+        ...(isBodyAllowed ? [{ name: 'Content-Type', value: CONTENT_TYPE_JSON }] : []),
+      ],
+      ...(isBodyAllowed ? { body: { mimeType: CONTENT_TYPE_JSON, text: '' } } : {}),
     }))._id;
   }
   if (requestType === 'gRPC') {
     activeRequestId = (await models.grpcRequest.create({
       parentId: parentId || workspaceId,
-      name: 'New Request',
+      name: req?.name || 'New Request',
     }))._id;
   }
   if (requestType === 'GraphQL') {
@@ -127,7 +133,7 @@ export const createRequestAction: ActionFunction = async ({ request, params }) =
         mimeType: CONTENT_TYPE_GRAPHQL,
         text: '',
       },
-      name: 'New Request',
+      name: req?.name || 'New Request',
     }))._id;
   }
   if (requestType === 'Event Stream') {
@@ -139,13 +145,13 @@ export const createRequestAction: ActionFunction = async ({ request, params }) =
         { name: 'User-Agent', value: `insomnium/${version}` },
         { name: 'Accept', value: CONTENT_TYPE_EVENT_STREAM },
       ],
-      name: 'New Event Stream',
+      name: req?.name || 'New Event Stream',
     }))._id;
   }
   if (requestType === 'WebSocket') {
     activeRequestId = (await models.webSocketRequest.create({
       parentId: parentId || workspaceId,
-      name: 'New WebSocket Request',
+      name: req?.name || 'New WebSocket Request',
       headers: [{ name: 'User-Agent', value: `insomnium/${version}` }],
     }))._id;
   }

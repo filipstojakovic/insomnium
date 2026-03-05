@@ -18,10 +18,12 @@ interface State {
   label?: string | null;
   placeholder?: string | null;
   inputType?: string | null;
-  onComplete?: (arg0: string) => Promise<void> | void;
+  onComplete?: (arg0: string, arg1?: string) => Promise<void> | void;
   onHide?: () => void;
   onDeleteHint?: ((arg0?: string) => void) | null;
   loading: boolean;
+  showHttpMethodPills?: boolean;
+  selectedHttpMethod?: string;
 }
 export interface PromptModalOptions {
   title: string;
@@ -35,9 +37,10 @@ export interface PromptModalOptions {
   validate?: (arg0: string) => string;
   label?: string;
   hints?: string[];
-  onComplete?: (arg0: string) => Promise<void> | void;
+  onComplete?: (arg0: string, arg1?: string) => Promise<void> | void;
   onHide?: () => void;
   onDeleteHint?: (arg0?: string) => void;
+  showHttpMethodPills?: boolean;
 }
 export interface PromptModalHandle {
   show: (options: PromptModalOptions) => void;
@@ -63,6 +66,8 @@ export const PromptModal = forwardRef<PromptModalHandle, ModalProps>((_, ref) =>
     onDeleteHint: undefined,
     onHide: undefined,
     loading: false,
+    showHttpMethodPills: false,
+    selectedHttpMethod: 'GET',
   });
 
   const handleSubmit = async (event: React.SyntheticEvent<HTMLFormElement | HTMLButtonElement>) => {
@@ -70,7 +75,11 @@ export const PromptModal = forwardRef<PromptModalHandle, ModalProps>((_, ref) =>
     if (inputRef.current) {
       const result = inputRef.current.type === 'checkbox' ? inputRef.current.checked.toString() : inputRef.current.value;
       if (result || inputRef.current?.type === 'text') {
-        state.onComplete?.(state.upperCase ? result?.toUpperCase() : result);
+        if (state.showHttpMethodPills) {
+          state.onComplete?.(state.upperCase ? result?.toUpperCase() : result, state.selectedHttpMethod);
+        } else {
+          state.onComplete?.(state.upperCase ? result?.toUpperCase() : result);
+        }
       }
       modalRef.current?.hide();
     }
@@ -83,6 +92,7 @@ export const PromptModal = forwardRef<PromptModalHandle, ModalProps>((_, ref) =>
       setState({
         ...options,
         loading: false,
+        selectedHttpMethod: 'GET',
       });
       modalRef.current?.show();
     },
@@ -97,6 +107,8 @@ export const PromptModal = forwardRef<PromptModalHandle, ModalProps>((_, ref) =>
     label,
     upperCase,
     hints,
+    showHttpMethodPills,
+    selectedHttpMethod,
   } = state;
   const input = (
     <input
@@ -178,6 +190,23 @@ export const PromptModal = forwardRef<PromptModalHandle, ModalProps>((_, ref) =>
         <form onSubmit={handleSubmit} className="wide pad">
           <div className={divClassnames}>{field}</div>
           {sanitizedHints}
+          {showHttpMethodPills && (
+            <div className="margin-top-sm flex flex-wrap gap-2">
+              {['GET', 'POST', 'PATCH', 'PUT', 'DELETE'].map(method => (
+                <button
+                  key={method}
+                  type="button"
+                  className={classnames(`btn btn--super-duper-compact http-method-${method}`, {
+                    'btn--outlined': selectedHttpMethod !== method,
+                    'btn--clicky': selectedHttpMethod === method,
+                  })}
+                  onClick={() => setState(s => ({ ...s, selectedHttpMethod: method }))}
+                >
+                  {method}
+                </button>
+              ))}
+            </div>
+          )}
         </form>
       </ModalBody>
       <ModalFooter>

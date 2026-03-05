@@ -344,14 +344,22 @@ export const Debug: FC = () => {
       const parentId = activeRequest
         ? activeRequest.parentId
         : activeWorkspace._id;
-      requestFetcher.submit(
-        { requestType: 'HTTP', parentId },
-        {
-          action: `/organization/${organizationId}/project/${projectId}/workspace/${workspaceId}/debug/request/new`,
-          method: 'post',
-          encType: 'application/json',
-        },
-      );
+      showPrompt({
+        title: 'New Request',
+        defaultValue: 'New Reqiest',
+        submitName: 'Create',
+        label: 'Name',
+        selectText: true,
+        showHttpMethodPills: true,
+        onComplete: (name, method) => requestFetcher.submit(
+          JSON.stringify({ requestType: 'HTTP', parentId, req: { name, method } }),
+          {
+            action: `/organization/${organizationId}/project/${projectId}/workspace/${workspaceId}/debug/request/new`,
+            method: 'post',
+            encType: 'application/json',
+          },
+        ),
+      });
     },
     request_showCreateFolder: () => {
       const parentId = activeRequest ? activeRequest.parentId : workspaceId;
@@ -396,7 +404,7 @@ export const Debug: FC = () => {
   const setActiveEnvironmentFetcher = useFetcher();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const sortOrder = searchParams.get('sortOrder') as SortOrder || 'type-manual';
+  const sortOrder = searchParams.get('sortOrder') as SortOrder || 'name-asc';
   const { hotKeyRegistry } = settings;
 
   const createRequest = ({ requestType, parentId, req }: { requestType: CreateRequestType; parentId: string; req?: Partial<Request> }) =>
@@ -531,9 +539,18 @@ export const Debug: FC = () => {
         icon: 'plus-circle',
         hint: hotKeyRegistry.request_createHTTP,
         action: () =>
-          createRequest({
-            requestType: 'HTTP',
-            parentId: workspaceId,
+          showPrompt({
+            title: 'New Request',
+            defaultValue: 'New Reqiest',
+            submitName: 'Create',
+            label: 'Name',
+            selectText: true,
+            showHttpMethodPills: true,
+            onComplete: (name, method) => createRequest({
+              requestType: 'HTTP',
+              parentId: workspaceId,
+              req: { name, method }
+            }),
           }),
       },
       {

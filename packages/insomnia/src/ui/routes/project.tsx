@@ -145,7 +145,7 @@ export const loader: LoaderFunction = async ({
   const { projectId, organizationId } = params;
   guard(organizationId, 'Organization ID is required');
   guard(projectId, 'projectId parameter is required');
-  const sortOrder = search.get('sortOrder') || 'modified-desc';
+  const sortOrder = search.get('sortOrder') || 'name-asc';
   const filter = search.get('filter') || '';
   const scope = search.get('scope') || 'all';
   const projectName = search.get('projectName') || '';
@@ -331,7 +331,7 @@ const ProjectRoute: FC = () => {
   const navigate = useNavigate();
   const filter = searchParams.get('filter') || '';
   const sortOrder =
-    (searchParams.get('sortOrder') as DashboardSortOrder) || 'modified-desc';
+    (searchParams.get('sortOrder') as DashboardSortOrder) || 'name-asc';
   const [importModalType, setImportModalType] = useState<
     'uri' | 'file' | 'clipboard' | null
   >(null);

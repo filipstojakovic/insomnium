@@ -4,6 +4,7 @@ import { useFetcher, useParams } from 'react-router-dom';
 
 import { RootLoaderData } from '../../routes/root';
 import { Hotkey } from '../hotkey';
+import { showPrompt } from '../modals';
 import { Pane, PaneBody, PaneHeader } from './pane';
 
 export const PlaceholderRequestPane: FC = () => {
@@ -14,12 +15,22 @@ export const PlaceholderRequestPane: FC = () => {
   const requestFetcher = useFetcher();
   const { organizationId, projectId, workspaceId } = useParams() as { organizationId: string; projectId: string; workspaceId: string };
   const createHttpRequest = useCallback(() =>
-    requestFetcher.submit({ requestType: 'HTTP', parentId: workspaceId },
-      {
-        action: `/organization/${organizationId}/project/${projectId}/workspace/${workspaceId}/debug/request/new`,
-        method: 'post',
-        encType: 'application/json',
-      }), [requestFetcher, organizationId, projectId, workspaceId]);
+    showPrompt({
+      title: 'New Request',
+      defaultValue: 'New Reqiest',
+      submitName: 'Create',
+      label: 'Name',
+      selectText: true,
+      showHttpMethodPills: true,
+      onComplete: (name, method) => requestFetcher.submit(
+        JSON.stringify({ requestType: 'HTTP', parentId: workspaceId, req: { name, method } }),
+        {
+          action: `/organization/${organizationId}/project/${projectId}/workspace/${workspaceId}/debug/request/new`,
+          method: 'post',
+          encType: 'application/json',
+        }
+      ),
+    }), [requestFetcher, organizationId, projectId, workspaceId]);
 
   return (
     <Pane type="request">

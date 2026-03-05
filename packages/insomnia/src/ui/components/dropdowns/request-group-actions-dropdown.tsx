@@ -148,10 +148,19 @@ export const RequestGroupActionsDropdown = ({
         name: 'HTTP Request',
         icon: 'plus-circle',
         hint: hotKeyRegistry.request_createHTTP,
-      action: () => createRequest({
-        requestType: 'HTTP',
-        parentId: requestGroup._id,
-      }),
+        action: () =>
+          showPrompt({
+            title: 'New Request',
+            defaultValue: 'New Reqiest',
+            submitName: 'Create',
+            label: 'Name',
+            selectText: true,
+            onComplete: name => createRequest({
+              requestType: 'HTTP',
+              parentId: requestGroup._id,
+              req: { name },
+            }),
+          }),
       },
       {
         id: 'Event Stream',
