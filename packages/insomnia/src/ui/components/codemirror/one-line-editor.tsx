@@ -207,7 +207,7 @@ export const OneLineEditor = forwardRef<OneLineEditorHandle, OneLineEditorProps>
 
   useEffect(() => {
 
-    if (isInfered && codeMirror.current) {
+    if (isInfered && codeMirror.current && codeMirror.current.getValue() !== defaultValue) {
       codeMirror.current?.setValue(defaultValue);
     }
   }, [defaultValue, isInfered]);

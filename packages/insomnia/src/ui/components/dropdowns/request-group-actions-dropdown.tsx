@@ -151,14 +151,18 @@ export const RequestGroupActionsDropdown = ({
         action: () =>
           showPrompt({
             title: 'New Request',
-            defaultValue: 'New Reqiest',
+            defaultValue: 'New Request',
             submitName: 'Create',
             label: 'Name',
             selectText: true,
-            onComplete: name => createRequest({
+            showHttpMethodPills: true,
+            showUrlField: true,
+            urlLabel: 'URL',
+            urlPlaceholder: 'https://api.example.com/v1/users',
+            onComplete: (name: string, method?: string, url?: string) => createRequest({
               requestType: 'HTTP',
               parentId: requestGroup._id,
-              req: { name },
+              req: { name, method, url },
             }),
           }),
       },

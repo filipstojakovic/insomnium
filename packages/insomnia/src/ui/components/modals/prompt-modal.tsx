@@ -6,6 +6,8 @@ import { ModalBody } from '../base/modal-body';
 import { ModalFooter } from '../base/modal-footer';
 import { ModalHeader } from '../base/modal-header';
 import { PromptButton } from '../base/prompt-button';
+import { OneLineEditor, OneLineEditorHandle } from '../codemirror/one-line-editor';
+
 interface State {
   title: string;
   hints?: string[];
@@ -18,13 +20,19 @@ interface State {
   label?: string | null;
   placeholder?: string | null;
   inputType?: string | null;
-  onComplete?: (arg0: string, arg1?: string) => Promise<void> | void;
+  onComplete?: (arg0: string, arg1?: string, arg2?: string) => Promise<void> | void;
   onHide?: () => void;
   onDeleteHint?: ((arg0?: string) => void) | null;
   loading: boolean;
   showHttpMethodPills?: boolean;
   selectedHttpMethod?: string;
+  showUrlField?: boolean;
+  urlLabel?: string;
+  urlPlaceholder?: string;
+  urlDefaultValue?: string;
+  urlValue?: string;
 }
+
 export interface PromptModalOptions {
   title: string;
   defaultValue?: string;
@@ -37,18 +45,26 @@ export interface PromptModalOptions {
   validate?: (arg0: string) => string;
   label?: string;
   hints?: string[];
-  onComplete?: (arg0: string, arg1?: string) => Promise<void> | void;
+  onComplete?: (arg0: string, arg1?: string, arg2?: string) => Promise<void> | void;
   onHide?: () => void;
   onDeleteHint?: (arg0?: string) => void;
   showHttpMethodPills?: boolean;
+  showUrlField?: boolean;
+  urlLabel?: string;
+  urlPlaceholder?: string;
+  urlDefaultValue?: string;
+  urlValue?: string;
+  selectedHttpMethod?: string;
 }
+
 export interface PromptModalHandle {
   show: (options: PromptModalOptions) => void;
   hide: () => void;
 }
+
 export const PromptModal = forwardRef<PromptModalHandle, ModalProps>((_, ref) => {
   const modalRef = useRef<ModalHandle>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<OneLineEditorHandle>(null);
 
   const [state, setState] = useState<State>({
     title: 'Not Set',
@@ -68,31 +84,36 @@ export const PromptModal = forwardRef<PromptModalHandle, ModalProps>((_, ref) =>
     loading: false,
     showHttpMethodPills: false,
     selectedHttpMethod: 'GET',
+    showUrlField: false,
+    urlLabel: '',
+    urlPlaceholder: '',
+    urlDefaultValue: '',
+    urlValue: '',
   });
 
-  const handleSubmit = async (event: React.SyntheticEvent<HTMLFormElement | HTMLButtonElement>) => {
+  const [inputValue, setInputValue] = useState('');
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    if (inputRef.current) {
-      const result = inputRef.current.type === 'checkbox' ? inputRef.current.checked.toString() : inputRef.current.value;
-      if (result || inputRef.current?.type === 'text') {
-        if (state.showHttpMethodPills) {
-          state.onComplete?.(state.upperCase ? result?.toUpperCase() : result, state.selectedHttpMethod);
-        } else {
-          state.onComplete?.(state.upperCase ? result?.toUpperCase() : result);
-        }
-      }
-      modalRef.current?.hide();
-    }
+    state.onComplete?.(
+      state.upperCase ? inputValue?.toUpperCase() : inputValue,
+      state.showHttpMethodPills ? state.selectedHttpMethod : undefined,
+      state.urlValue
+    );
+    modalRef.current?.hide();
   };
+
   useImperativeHandle(ref, () => ({
     hide: () => {
       modalRef.current?.hide();
     },
     show: options => {
+      setInputValue(options.defaultValue || '');
       setState({
         ...options,
         loading: false,
-        selectedHttpMethod: 'GET',
+        selectedHttpMethod: options.selectedHttpMethod || 'GET',
+        urlValue: options.urlDefaultValue || '',
       });
       modalRef.current?.show();
     },
@@ -109,28 +130,75 @@ export const PromptModal = forwardRef<PromptModalHandle, ModalProps>((_, ref) =>
     hints,
     showHttpMethodPills,
     selectedHttpMethod,
+    showUrlField,
+    urlLabel,
+    urlPlaceholder,
+    urlDefaultValue,
   } = state;
+
+  const onUrlChange = (value: string) => {
+    setState(s => ({ ...s, urlValue: value }));
+
+    if (!value) {
+      return;
+    }
+
+    let extractedPath = '';
+
+    // Handle environment variables like {{base}}/v1/users
+    if (value.startsWith('{{')) {
+      const closingBracesIndex = value.indexOf('}}');
+      if (closingBracesIndex !== -1) {
+        extractedPath = value.substring(closingBracesIndex + 2);
+      }
+    } else {
+      try {
+        // Try to parse as a full URL, using string concatenation to avoid template literal issues in some environments
+        const parsedUrl = new URL(value.includes('://') ? value : 'http://' + value);
+        extractedPath = parsedUrl.pathname;
+
+        if (!value.includes('://')) {
+          // Handle cases like "xyx.com/b/c/d" where we want "b/c/d" if it's not a full URL
+          const parts = value.split('/');
+          if (parts.length > 1) {
+            extractedPath = parts.slice(1).join('/');
+          }
+        }
+      } catch (e) {
+        // Fallback for non-URL strings
+        const parts = value.split('/');
+        if (parts.length > 1) {
+          extractedPath = parts.slice(1).join('/');
+        }
+      }
+    }
+
+    if (extractedPath) {
+      // Remove leading slash if it exists
+      const sanitizedPath = extractedPath.startsWith('/') ? extractedPath.substring(1) : extractedPath;
+      if (sanitizedPath) {
+        setInputValue(sanitizedPath);
+      }
+    }
+  };
+
   const input = (
-    <input
+    <OneLineEditor
       ref={inputRef}
-      onChange={event => {
+      onChange={value => {
+        setInputValue(value);
         if (state.validate) {
-          const errorMessage = state.validate(event.target.value);
-          event.target.setCustomValidity(errorMessage);
+          state.validate(value);
         }
       }}
-      autoFocus
-      defaultValue={state.defaultValue || ''}
+      defaultValue={inputValue}
+      isInfered
       id="prompt-input"
       type={inputType === 'decimal' ? 'number' : inputType || 'text'}
-      step={inputType === 'decimal' ? '0.1' : undefined}
-      min={inputType === 'decimal' ? '0.5' : undefined}
-      style={{
-        textTransform: upperCase ? 'uppercase' : 'none',
-      }}
       placeholder={placeholder || ''}
     />
   );
+
   let sanitizedHints: ReactNode[] = [];
 
   if (Array.isArray(hints)) {
@@ -152,10 +220,10 @@ export const PromptModal = forwardRef<PromptModalHandle, ModalProps>((_, ref) =>
           className="tall space-left icon"
           onClick={() => {
             state.onDeleteHint?.(hint);
-            const hints = state.hints?.filter(h => h !== hint);
+            const entryHints = state.hints?.filter(h => h !== hint);
             setState(state => ({
               ...state,
-              hints,
+              hints: entryHints,
             }));
           }}
         >
@@ -180,6 +248,22 @@ export const PromptModal = forwardRef<PromptModalHandle, ModalProps>((_, ref) =>
   const divClassnames = classnames('form-control form-control--wide', {
     'form-control--outlined': inputType !== 'checkbox',
   });
+
+  const urlField = showUrlField && (
+    <div className={divClassnames}>
+      <label>
+        {urlLabel || 'URL'}
+        <OneLineEditor
+          id="prompt-modal-url"
+          type="text"
+          defaultValue={urlDefaultValue || ''}
+          placeholder={urlPlaceholder || ''}
+          onChange={onUrlChange}
+        />
+      </label>
+    </div>
+  );
+
   return (
     <Modal
       ref={modalRef}
@@ -188,6 +272,7 @@ export const PromptModal = forwardRef<PromptModalHandle, ModalProps>((_, ref) =>
       <ModalHeader>{title}</ModalHeader>
       <ModalBody className="wide">
         <form onSubmit={handleSubmit} className="wide pad">
+          {urlField}
           <div className={divClassnames}>{field}</div>
           {sanitizedHints}
           {showHttpMethodPills && (
@@ -198,7 +283,7 @@ export const PromptModal = forwardRef<PromptModalHandle, ModalProps>((_, ref) =>
                   type="button"
                   className={classnames(`btn btn--super-duper-compact http-method-${method}`, {
                     'btn--outlined': selectedHttpMethod !== method,
-                    'btn--clicky': selectedHttpMethod === method,
+                    [`bg-http-method-${method}`]: selectedHttpMethod === method,
                   })}
                   onClick={() => setState(s => ({ ...s, selectedHttpMethod: method }))}
                 >

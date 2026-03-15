@@ -17,13 +17,16 @@ export const PlaceholderRequestPane: FC = () => {
   const createHttpRequest = useCallback(() =>
     showPrompt({
       title: 'New Request',
-      defaultValue: 'New Reqiest',
+      defaultValue: 'New Request',
       submitName: 'Create',
       label: 'Name',
       selectText: true,
       showHttpMethodPills: true,
-      onComplete: (name, method) => requestFetcher.submit(
-        JSON.stringify({ requestType: 'HTTP', parentId: workspaceId, req: { name, method } }),
+      showUrlField: true,
+      urlLabel: 'URL',
+      urlPlaceholder: 'https://api.example.com/v1/users',
+      onComplete: (name: string, method?: string, url?: string) => requestFetcher.submit(
+        JSON.stringify({ requestType: 'HTTP', parentId: workspaceId, req: { name, method, url } }),
         {
           action: `/organization/${organizationId}/project/${projectId}/workspace/${workspaceId}/debug/request/new`,
           method: 'post',

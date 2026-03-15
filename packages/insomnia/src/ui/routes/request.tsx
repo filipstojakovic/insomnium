@@ -108,6 +108,7 @@ export const createRequestAction: ActionFunction = async ({ request, params }) =
       parentId: parentId || workspaceId,
       method,
       name: req?.name || 'New Request',
+      url: req?.url || '',
       headers: [
         { name: 'User-Agent', value: `insomnium/${version}` },
         ...(isBodyAllowed ? [{ name: 'Content-Type', value: CONTENT_TYPE_JSON }] : []),
@@ -119,12 +120,14 @@ export const createRequestAction: ActionFunction = async ({ request, params }) =
     activeRequestId = (await models.grpcRequest.create({
       parentId: parentId || workspaceId,
       name: req?.name || 'New Request',
+      url: req?.url || '',
     }))._id;
   }
   if (requestType === 'GraphQL') {
     activeRequestId = (await models.request.create({
       parentId: parentId || workspaceId,
       method: METHOD_POST,
+      url: req?.url || '',
       headers: [
         { name: 'User-Agent', value: `insomnium/${version}` },
         { name: 'Content-Type', value: CONTENT_TYPE_JSON },
@@ -140,7 +143,7 @@ export const createRequestAction: ActionFunction = async ({ request, params }) =
     activeRequestId = (await models.request.create({
       parentId: parentId || workspaceId,
       method: METHOD_GET,
-      url: '',
+      url: req?.url || '',
       headers: [
         { name: 'User-Agent', value: `insomnium/${version}` },
         { name: 'Accept', value: CONTENT_TYPE_EVENT_STREAM },
@@ -152,6 +155,7 @@ export const createRequestAction: ActionFunction = async ({ request, params }) =
     activeRequestId = (await models.webSocketRequest.create({
       parentId: parentId || workspaceId,
       name: req?.name || 'New WebSocket Request',
+      url: req?.url || '',
       headers: [{ name: 'User-Agent', value: `insomnium/${version}` }],
     }))._id;
   }

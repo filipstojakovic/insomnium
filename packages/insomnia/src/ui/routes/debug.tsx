@@ -346,13 +346,16 @@ export const Debug: FC = () => {
         : activeWorkspace._id;
       showPrompt({
         title: 'New Request',
-        defaultValue: 'New Reqiest',
+        defaultValue: 'New Request',
         submitName: 'Create',
         label: 'Name',
         selectText: true,
         showHttpMethodPills: true,
-        onComplete: (name, method) => requestFetcher.submit(
-          JSON.stringify({ requestType: 'HTTP', parentId, req: { name, method } }),
+        showUrlField: true,
+        urlLabel: 'URL',
+        urlPlaceholder: 'https://api.example.com/v1/users',
+        onComplete: (name: string, method?: string, url?: string) => requestFetcher.submit(
+          JSON.stringify({ requestType: 'HTTP', parentId, req: { name, method, url } }),
           {
             action: `/organization/${organizationId}/project/${projectId}/workspace/${workspaceId}/debug/request/new`,
             method: 'post',
@@ -541,15 +544,18 @@ export const Debug: FC = () => {
         action: () =>
           showPrompt({
             title: 'New Request',
-            defaultValue: 'New Reqiest',
+            defaultValue: 'New Request',
             submitName: 'Create',
             label: 'Name',
             selectText: true,
             showHttpMethodPills: true,
-            onComplete: (name, method) => createRequest({
+            showUrlField: true,
+            urlLabel: 'URL',
+            urlPlaceholder: 'https://api.example.com/v1/users',
+            onComplete: (name: string, method?: string, url?: string) => createRequest({
               requestType: 'HTTP',
               parentId: workspaceId,
-              req: { name, method }
+              req: { name, method, url }
             }),
           }),
       },
