@@ -30,6 +30,7 @@ export interface OneLineEditorProps {
 
 export interface OneLineEditorHandle {
   selectAll: () => void;
+  getValue: () => string;
   focusEnd: () => void;
 }
 export const OneLineEditor = forwardRef<OneLineEditorHandle, OneLineEditorProps>(({
@@ -217,6 +218,7 @@ export const OneLineEditor = forwardRef<OneLineEditorHandle, OneLineEditorProps>
 
   useImperativeHandle(ref, () => ({
     selectAll: () => codeMirror.current?.setSelection({ line: 0, ch: 0 }, { line: codeMirror.current.lineCount(), ch: 0 }),
+    getValue: () => codeMirror.current?.getValue() || '',
     focusEnd: () => {
       if (codeMirror.current && !codeMirror.current.hasFocus()) {
         codeMirror.current.focus();

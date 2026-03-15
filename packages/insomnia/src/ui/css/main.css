@@ -725,6 +725,7 @@ i.fa.fa--fixed-width {
 }
 .selectable {
   -webkit-user-select: text;
+  user-select: text;
   cursor: text;
 }
 .text-shadow {

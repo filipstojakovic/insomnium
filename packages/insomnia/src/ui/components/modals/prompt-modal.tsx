@@ -65,6 +65,7 @@ export interface PromptModalHandle {
 export const PromptModal = forwardRef<PromptModalHandle, ModalProps>((_, ref) => {
   const modalRef = useRef<ModalHandle>(null);
   const inputRef = useRef<OneLineEditorHandle>(null);
+  const urlInputRef = useRef<OneLineEditorHandle>(null);
 
   const [state, setState] = useState<State>({
     title: 'Not Set',
@@ -95,10 +96,14 @@ export const PromptModal = forwardRef<PromptModalHandle, ModalProps>((_, ref) =>
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
+
+    const nameValue = inputRef.current?.getValue() ?? inputValue;
+    const finalUrlValue = urlInputRef.current?.getValue() ?? state.urlValue;
+
     state.onComplete?.(
-      state.upperCase ? inputValue?.toUpperCase() : inputValue,
+      state.upperCase ? nameValue?.toUpperCase() : nameValue,
       state.showHttpMethodPills ? state.selectedHttpMethod : undefined,
-      state.urlValue
+      finalUrlValue
     );
     modalRef.current?.hide();
   };
@@ -256,6 +261,7 @@ export const PromptModal = forwardRef<PromptModalHandle, ModalProps>((_, ref) =>
         <OneLineEditor
           id="prompt-modal-url"
           type="text"
+          ref={urlInputRef}
           defaultValue={urlDefaultValue || ''}
           placeholder={urlPlaceholder || ''}
           onChange={onUrlChange}
